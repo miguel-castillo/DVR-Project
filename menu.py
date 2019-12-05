@@ -92,8 +92,11 @@ def server():
             print("Waiting for command: ")
 
 #update function
-def update():
-    print("Update option")
+def update(server1, server2, linkCost):
+    for node in G.nodes:
+        if node == server1 :
+            G.nodes[node]['routing_table'].update_edge(server2, linkCost)
+    print("Link Cost Updated")
 
 #step function
 def step():
@@ -136,7 +139,7 @@ def mainMenu():
         if len(splitCommand) > 0 :
             if splitCommand[0] == 'update':
                 if len(splitCommand) > 3 :
-                    update()
+                    update(splitCommand[1], splitCommand[2], splitCommand[3])
                 else:
                     print("Missing arguments")
                     print("Use the following template:")
@@ -166,6 +169,7 @@ def mainMenu():
             else:
                 print("Command not found")
 
+#creates table for a specific node... Also updates table value
 class RoutingTable:
 
     def __init__(self, node):
