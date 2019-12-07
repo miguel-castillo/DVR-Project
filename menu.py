@@ -109,12 +109,18 @@ def server():
         while crashTemp == True:
             data, address = my_server.recvfrom(4096)
             data_arr = pickle.loads(data)
+            myId = 0
+            for t in servers:
+                    m = t.split()
+                    if m[1] == address[0]:
+                        myId = m[0]
             if len(server_block) > 0:
                 for s in server_block:
                     if s != address[0]:
                         # data, address = my_server.recvfrom(1024)
+                        
                         packetsRe += 1
-                        print("Received message from server ", address[1])
+                        print("Received message from server ", myId)
                         i = 0
                         while i < len(data_arr):
                             if data_arr[i] != data_arr[i+1]:
@@ -126,7 +132,7 @@ def server():
             else:
                 # data, address = my_server.recvfrom(1024)
                 packetsRe += 1
-                print("Received message from server ", address[1])
+                print("Received message from server ", myId)
                 i = 0
                 while i < len(data_arr):
                     if data_arr[i] != data_arr[i+1]:
