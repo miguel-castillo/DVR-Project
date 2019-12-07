@@ -16,6 +16,7 @@ global server_id
 global interval
 global packetsRe 
 global server_block
+global crashTemp
 #reading topology file
 def readFile(path):
     global servers
@@ -105,7 +106,7 @@ def server():
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as my_server:
         my_server.bind((HOST, my_server_port))
         #waiting to receive any message
-        while True:
+        while crashTemp == True:
             data, address = my_server.recvfrom(4096)
             data_arr = pickle.loads(data)
             if len(server_block) > 0:
@@ -212,17 +213,19 @@ def disable(serverId):
         id = temp[0] 
         if id == serverId :
             print("Disable server id: " + str(id))
-            print(s)
             server_block.append(temp[1])
     print("Done")
 
 #crash function
 def crash():
+    global my_server
+    global crashTemp
     print("Crashing all links...")
     for s in servers: 
         temp = s.split()
         id = temp[0]
         disable(id)
+    crashTemp = False
     print("Done!")
     
 # main menu function
@@ -264,6 +267,7 @@ def mainMenu():
                     print("Missing server ID")
             elif splitCommand[0] == "crash":
                 crash()
+                print("server crashed")
             elif splitCommand[0] == "exit":
                 temp = 'exit'
                 print("Program terminated")
@@ -294,6 +298,8 @@ if arguments_size > 5 :
         global serverThread
         global interval 
         global server_block
+        global crashTemp
+        crashTemp = True
         server_block = []
         interval = int(arguments[5])
         serverThread = threading.Thread(target=server)
