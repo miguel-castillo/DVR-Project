@@ -153,6 +153,14 @@ def persistenUpdate():
 
 #step function
 def step(node):
+    blockid = []
+    for ser in servers:
+        tempS = ser.split()
+        for s in server_block:
+            if tempS[1] == s:
+                blockid.append(tempS[0])
+                break
+        
     message = []
     routing_table = G.nodes[node]['routing_table'].routing_table
     for n in routing_table:
@@ -166,8 +174,18 @@ def step(node):
         temp = s.split()
         HOST = temp[1]              # The server's hostname or IP address
         PORT = int(temp[2])         # The port used by the server
+        skip = False
         if temp[0] != server_id:
-            my_server.sendto(data_string, (HOST, PORT))
+            if len(blockid) > 0:
+                for bId in blockid:
+                    if temp [0] == bId:
+                        skip = True
+                        break
+
+                if skip != True:
+                    my_server.sendto(data_string, (HOST, PORT))
+            else:
+                my_server.sendto(data_string, (HOST, PORT))
    
 
 #packets function
