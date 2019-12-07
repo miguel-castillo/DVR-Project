@@ -114,7 +114,7 @@ def server():
                     if s != address[0]:
                         # data, address = my_server.recvfrom(1024)
                         packetsRe += 1
-                        print('\nreceived {} bytes from {}'.format(len(data), address))
+                        print("Received message from server ", address[1])
                         i = 0
                         while i < len(data_arr):
                             if data_arr[i] != data_arr[i+1]:
@@ -126,7 +126,7 @@ def server():
             else:
                 # data, address = my_server.recvfrom(1024)
                 packetsRe += 1
-                print('\nreceived {} bytes from {}'.format(len(data), address))
+                print("Received message from server ", address[1])
                 i = 0
                 while i < len(data_arr):
                     if data_arr[i] != data_arr[i+1]:
@@ -294,6 +294,8 @@ class RoutingTable:
     
     def update_edge(self, dest, cost):
         self.routing_table.update({dest: cost})
+
+
 
 #Main Program
 # It will check for input then it will begin the treads
