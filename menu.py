@@ -14,6 +14,7 @@ global servers
 global G
 global server_id
 global interval
+global packets
 
 #reading topology file
 def readFile(path):
@@ -152,7 +153,8 @@ def step(node):
 
 #packets function
 def packets():
-    print("Packets option")
+    print("Number of packets received = "+ str(packets))
+
 
 #display function
 def display(node):
@@ -215,7 +217,7 @@ def mainMenu():
             elif splitCommand[0] == "disable":
                 if len(splitCommand) > 1 :
                     if splitCommand[1].isnumeric() :
-                        disable()
+                        disable(splitCommand[1])
                     else:
                         print("Enter a number for server ID")
                 else:
