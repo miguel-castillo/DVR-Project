@@ -208,12 +208,18 @@ def display(node):
 #disable function
 def disable(serverId):
     global server_block
+    my_temp_arr = []
     for s in servers:
         temp = s.split()
         id = temp[0] 
         if id == serverId :
+            update(server_id,serverId,"inf")
+            update(serverId,server_id,"inf")
             print("Disable server id: " + str(id))
-            server_block.append(temp[1])
+            my_temp_arr.append(temp[1])
+    for n in G.nodes():
+        step(n)
+    server_block = my_temp_arr
     print("Done")
 
 #crash function
