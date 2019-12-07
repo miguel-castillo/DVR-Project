@@ -14,13 +14,15 @@ global servers
 global G
 global server_id
 global interval
-global packets
-
+global packetsRe 
+global server_block
 #reading topology file
 def readFile(path):
     global servers
     global my_server_port
     global server_id
+    global packetsRe
+    packetsRe = 0
     servers = []
     edges = []
     hostname = socket.gethostname()
@@ -99,22 +101,39 @@ def server():
     hostname = socket.gethostname()
     HOST = socket.gethostbyname(hostname)
     global my_server
+    global packetsRe
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as my_server:
         my_server.bind((HOST, my_server_port))
         #waiting to receive any message
         while True:
             data, address = my_server.recvfrom(4096)
-            data_arr = pickle.loads(data)  
-            # data, address = my_server.recvfrom(1024)
-            print('\nreceived {} bytes from {}'.format(len(data), address))
-            i = 0
-            while i < len(data_arr):
-                if data_arr[i] != data_arr[i+1]:
-                    update(data_arr[i], data_arr[i+1], data_arr[i+2]) 
-                    update(data_arr[i+1], data_arr[i], data_arr[i+2])
-                i += 3
-          
-            print("Waiting for command: ")
+            data_arr = pickle.loads(data)
+            if len(server_block) > 0:
+                for s in server_block:
+                    if s != address[0]:
+                        # data, address = my_server.recvfrom(1024)
+                        packetsRe += 1
+                        print('\nreceived {} bytes from {}'.format(len(data), address))
+                        i = 0
+                        while i < len(data_arr):
+                            if data_arr[i] != data_arr[i+1]:
+                                update(data_arr[i], data_arr[i+1], data_arr[i+2]) 
+                                update(data_arr[i+1], data_arr[i], data_arr[i+2])
+                            i += 3
+                    
+                        print("Waiting for command: ")
+            else:
+                # data, address = my_server.recvfrom(1024)
+                packetsRe += 1
+                print('\nreceived {} bytes from {}'.format(len(data), address))
+                i = 0
+                while i < len(data_arr):
+                    if data_arr[i] != data_arr[i+1]:
+                        update(data_arr[i], data_arr[i+1], data_arr[i+2]) 
+                        update(data_arr[i+1], data_arr[i], data_arr[i+2])
+                    i += 3
+                print("Waiting for command: ")
+            
 
 #update function
 def update(server1, server2, linkCost):
@@ -153,7 +172,9 @@ def step(node):
 
 #packets function
 def packets():
-    print("Number of packets received = "+ str(packets))
+    global packetsRe
+    print("Number of packets received = "+ str(packetsRe))
+    packetsRe = 0
 
 
 #display function
@@ -167,13 +188,14 @@ def display(node):
 
 #disable function
 def disable(serverId):
+    global server_block
     for s in servers:
         temp = s.split()
         id = temp[0] 
         if id == serverId :
             print("Disable server id: " + str(id))
             print(s)
-            G.remove_node(id)
+            server_block.append(temp[1])
     print("Done")
 
 #crash function
@@ -253,6 +275,8 @@ if arguments_size > 5 :
         readFile(topologyPath)
         global serverThread
         global interval 
+        global server_block
+        server_block = []
         interval = int(arguments[5])
         serverThread = threading.Thread(target=server)
         serverThread.demon = True
