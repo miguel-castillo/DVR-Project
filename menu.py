@@ -17,6 +17,8 @@ global interval
 global packetsRe 
 global server_block
 global crashTemp
+global shortest_path
+
 #reading topology file
 def readFile(path):
     global servers
@@ -79,15 +81,6 @@ def format_edges(raw_edges):
         edges.append((edge[0], edge[2], {'weight': float(edge[4])}))
     return edges
 
-# Displays the routing table for a given node
-def print_routing_table(node):
-    routing_table = G.nodes[node]['routing_table'].routing_table
-    print("\n Routing table for %s:" % node)
-    for node in routing_table:
-        #Getting rid of extra space
-        if node != '\n':
-            print("\t", node, "\t", routing_table[node])
-
 #Error message for invalid server command
 def serverError():
     print("Missing arguments to start the program.")
@@ -117,27 +110,22 @@ def server():
             if len(server_block) > 0:
                 for s in server_block:
                     if s != address[0]:
-                        # data, address = my_server.recvfrom(1024)
-                        
                         packetsRe += 1
                         print("Received message from server ", myId)
                         i = 0
                         while i < len(data_arr):
                             if data_arr[i] != data_arr[i+1]:
                                 update(data_arr[i], data_arr[i+1], data_arr[i+2]) 
-                                update(data_arr[i+1], data_arr[i], data_arr[i+2])
                             i += 3
                     
                         print("Waiting for command: ")
             else:
-                # data, address = my_server.recvfrom(1024)
                 packetsRe += 1
                 print("Received message from server ", myId)
                 i = 0
                 while i < len(data_arr):
                     if data_arr[i] != data_arr[i+1]:
                         update(data_arr[i], data_arr[i+1], data_arr[i+2]) 
-                        update(data_arr[i+1], data_arr[i], data_arr[i+2])
                     i += 3
                 print("Waiting for command: ")
             
@@ -146,7 +134,11 @@ def server():
 def update(server1, server2, linkCost):
     for node in G.nodes:
         if node == server1 :
-            G.nodes[node]['routing_table'].update_edge(server2, float(linkCost))
+            update_routing_table(server1, server2, float(linkCost))
+
+def update_routing_table(src, dest, cost):
+    G.nodes[src]['routing_table'].update_edge(dest, cost)
+    G.nodes[dest]['routing_table'].update_edge(src, cost)
 
 #Function that will keep sending updates with a set interval
 def persistenUpdate():
@@ -206,10 +198,54 @@ def packets():
 def display(node):
     routing_table = G.nodes[node]['routing_table'].routing_table
     print("Routing table for %s:" % node)
+    print("Source","\t", "    Destination", "\t", "Cost","\t", "Shortest Cost", "\t", "   Shortest Path" )
+    print("-------------------------------------------------------------------------------")
     for n in routing_table:
         #Getting rid of extra space
         if n != '\n':
-            print(node,"\t", n, "\t", routing_table[n])
+            if n != server_id:      
+                shortest = findPath(node,n)
+                print(node,"\t \t", n, "\t \t", routing_table[n],"\t \t",shortest,"\t \t", shortest_path)
+            else:
+                print(node,"\t \t", n, "\t \t", routing_table[n],"\t \t","0","\t \t", "0")
+    print("-------------------------------------------------------------------------------")
+
+#finds all the possible paths from point a to b
+def findPath(src,dest):
+    global shortest_path
+    paths = [p for p in nx.all_simple_paths(G, src, dest)]
+    if len(paths) >1:
+        temp = []
+        for path in paths:
+            temp.append(getDistance(path))
+        i = 0
+        current_short = 0
+        while i <len(temp):
+            if temp[i] != 0:
+                if i < 1:
+                    current_short = temp[i]
+                    shortest_path = paths[i]
+                else:
+                    if temp[i] < current_short:
+                        current_short = temp[i]
+                        shortest_path = paths[i]
+            i += 1
+        return current_short
+
+#gets the cost from point a to b
+def getLength(src, dest):
+    length = G.nodes[src]['routing_table'].routing_table[dest]
+    return length
+
+#gets the distance from point a to b to c
+def getDistance(element):
+    i = 0
+    distance = 0
+    while i < len(element)-1:
+        distance += getLength(element[i],element[i+1])
+        i += 1
+    return distance
+    
 
 #disable function
 def disable(serverId):
@@ -220,8 +256,7 @@ def disable(serverId):
         id = temp[0] 
         if id == serverId :
             update(server_id,serverId,"inf")
-            update(serverId,server_id,"inf")
-            print("Disable server id: " + str(id))
+            print("Disable link ",server_id," -> ", id)
             my_temp_arr.append(temp[1])
     for n in G.nodes():
         step(n)
@@ -239,7 +274,7 @@ def crash():
         disable(id)
     crashTemp = False
     print("Done!")
-    
+
 # main menu function
 def mainMenu():
     print("You can enter a command at any time")
@@ -280,6 +315,7 @@ def mainMenu():
             elif splitCommand[0] == "crash":
                 crash()
                 print("server crashed")
+                os._exit(1)
             elif splitCommand[0] == "exit":
                 temp = 'exit'
                 print("Program terminated")
@@ -292,6 +328,7 @@ def mainMenu():
 class RoutingTable:
 
     def __init__(self, node):
+        global G
         self.name = node
         self.routing_table = {adj_node:G.adj[node][adj_node]['weight'] for adj_node in G.adj[node]} # add adjacent nodes to the routing table
         non_adjacent_nodes = list(set(G.nodes) - set(G.adj[node]) - set(node)) 
@@ -322,9 +359,9 @@ if arguments_size > 5 :
         menuThread = threading.Thread(target=mainMenu)
         menuThread.demon = True
         menuThread.start()
-        updateThread = threading.Thread(target=persistenUpdate)
-        updateThread.daemon = True
-        updateThread.start()
+        # updateThread = threading.Thread(target=persistenUpdate)
+        # updateThread.daemon = True
+        # updateThread.start()
     else:
         serverError()
 else:
