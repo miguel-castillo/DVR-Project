@@ -205,7 +205,16 @@ def display(node):
         if n != '\n':
             if n != server_id:      
                 shortest = findPath(node,n)
-                print(node,"\t \t", n, "\t \t", routing_table[n],"\t \t",shortest,"\t \t", shortest_path)
+                short_path = ""
+                i = 0
+                while i < len(shortest_path):
+                    if i == len(shortest_path)-1:
+                        short_path += str(shortest_path[i])
+                    else :
+                        short_path += str(shortest_path[i]) + " -> "
+                    i +=1
+                
+                print(node,"\t \t", n, "\t \t", routing_table[n],"\t \t",shortest,"\t \t", short_path)
             else:
                 print(node,"\t \t", n, "\t \t", routing_table[n],"\t \t","0","\t \t", "0")
     print("-------------------------------------------------------------------------------")
